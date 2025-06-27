@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marine Route Weather Forecasting</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-ship"></i> Marine Route Weather Forecasting</h1>
+                <p>Real-time weather data for safe voyage planning</p>
+            </div>
+        </header>
+
+        <!-- Storm Alert Section -->
+        <div id="stormAlert" class="storm-alert hidden">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="stormAlertText"></span>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="input-section">
+                <h2>Route Planning</h2>
+                
+                <!-- Input Method Tabs -->
+                <div class="input-tabs">
+                    <button class="tab-btn active" data-tab="map">
+                        <i class="fas fa-map-marked-alt"></i> Choose from Map
+                    </button>
+                    <button class="tab-btn" data-tab="coordinates">
+                        <i class="fas fa-crosshairs"></i> Enter Coordinates
+                    </button>
+                    <button class="tab-btn" data-tab="search">
+                        <i class="fas fa-search"></i> Search Location
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- Map Tab -->
+                    <div id="mapTab" class="tab-pane active">
+                        <div id="map"></div>
+                        <div class="map-instructions">
+                            <p><i class="fas fa-info-circle"></i> Click on the map to set origin and destination points</p>
+                        </div>
+                    </div>
+
+                    <!-- Coordinates Tab -->
+                    <div id="coordinatesTab" class="tab-pane">
+                        <div class="coordinates-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Origin Coordinates</label>
+                                    <input type="text" id="originLat" placeholder="Latitude" />
+                                    <input type="text" id="originLng" placeholder="Longitude" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Destination Coordinates</label>
+                                    <input type="text" id="destLat" placeholder="Latitude" />
+                                    <input type="text" id="destLng" placeholder="Longitude" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Tab -->
+                    <div id="searchTab" class="tab-pane">
+                        <div class="search-form">
+                            <div class="form-group">
+                                <label>Origin Location</label>
+                                <input type="text" id="originSearch" placeholder="Enter port or city name" />
+                                <div id="originSuggestions" class="suggestions"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Destination Location</label>
+                                <input type="text" id="destSearch" placeholder="Enter port or city name" />
+                                <div id="destSuggestions" class="suggestions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vessel Specifications -->
+                <div class="vessel-specs">
+                    <h3>Vessel Specifications</h3>
+                    <div class="specs-grid">
+                        <div class="form-group">
+                            <label>Vessel Type</label>
+                            <select id="vesselType">
+                                <option value="cargo">Cargo Ship</option>
+                                <option value="tanker">Tanker</option>
+                                <option value="container">Container Ship</option>
+                                <option value="passenger">Passenger Vessel</option>
+                                <option value="yacht">Yacht</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Wind Speed (knots)</label>
+                            <input type="number" id="maxWindSpeed" value="30" min="10" max="100" />
+                        </div>
+                        <div class="form-group">
+                            <label>Max Wave Height (meters)</label>
+                            <input type="number" id="maxWaveHeight" value="4" min="1" max="20" step="0.5" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="getWeatherBtn" class="primary-btn">
+                    <i class="fas fa-cloud-sun"></i> Get Weather Forecast
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section hidden" id="resultsSection">
+                <!-- Route Summary -->
+                <div class="route-summary">
+                    <h3>Route Summary</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <i class="fas fa-route"></i>
+                            <div>
+                                <span class="label">Distance</span>
+                                <span class="value" id="routeDistance">--</span>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <span class="label">Estimated Duration</span>
+                                <span class="value" id="routeDuration">--</span>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-thermometer-half"></i>
+                            <div>
+                                <span class="label">Avg Temperature</span>
+                                <span class="value" id="avgTemp">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marine Conditions Summary -->
+                <div class="marine-conditions">
+                    <h3>Marine Conditions Overview</h3>
+                    <div class="conditions-grid">
+                        <div class="condition-card">
+                            <i class="fas fa-wind"></i>
+                            <h4>Average Wind Speed</h4>
+                            <div class="condition-value" id="avgWindSpeed">--</div>
+                            <div class="condition-label">knots</div>
+                        </div>
+                        <div class="condition-card">
+                            <i class="fas fa-water"></i>
+                            <h4>Average Swell Height</h4>
+                            <div class="condition-value" id="avgSwellHeight">--</div>
+                            <div class="condition-label">meters</div>
+                        </div>
+                        <div class="condition-card">
+                            <i class="fas fa-stream"></i>
+                            <h4>Current Speed</h4>
+                            <div class="condition-value" id="currentSpeed">--</div>
+                            <div class="condition-label">knots</div>
+                        </div>
+                        <div class="condition-card storm-status">
+                            <i class="fas fa-bolt"></i>
+                            <h4>Storm Status</h4>
+                            <div class="condition-value" id="stormStatus">--</div>
+                            <div class="condition-label" id="stormDays">No storms detected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storm Alerts Detail -->
+                <div id="stormAlertsSection" class="storm-alerts-detail hidden">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Storm Warnings</h3>
+                    <div id="stormAlertsList" class="storm-alerts-list">
+                        <!-- Storm alerts will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Weather Forecast Grid -->
+                <div class="weather-forecast">
+                    <h3>10-Day Weather Forecast</h3>
+                    <div id="forecastGrid" class="forecast-grid">
+                        <!-- Weather cards will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Detailed Weather Charts -->
+                <div class="weather-charts">
+                    <div class="chart-container">
+                        <h4>Wind Speed Forecast</h4>
+                        <canvas id="windChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Wave Height Forecast</h4>
+                        <canvas id="waveChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Swell Height Forecast</h4>
+                        <canvas id="swellChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Current Speed Forecast</h4>
+                        <canvas id="currentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner hidden">
+            <div class="spinner"></div>
+            <p>Fetching weather data...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
